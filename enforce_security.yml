@@ -1,0 +1,64 @@
+---
+- name: Enforce system security guidelines
+  hosts: all
+  become: yes
+  vars:
+    ssh_config_path: /etc/ssh/sshd_config
+    desired_ssh_setting: "PermitRootLogin no"
+
+  tasks:
+
+    - name: Ensure password aging policy
+      lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MAX_DAYS'
+        line: 'PASS_MAX_DAYS   90'
+
+    - name: Set minimum password length
+      lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MIN_LEN'
+        line: 'PASS_MIN_LEN    12'
+
+    - name: Disable root login via SSH
+      lineinfile:
+        path: "{{ ssh_config_path }}"
+        regexp: '^PermitRootLogin'
+        line: "{{ desired_ssh_setting }}"
+        backup: yes
+      notify: Restart SSH
+
+    - name: Ensure auditd is installed
+      package:
+        name: auditd
+        state: present
+
+    - name: Enable and start auditd
+      service:
+        name: auditd
+        state: started
+        enabled: yes
+
+    - name: Ensure firewalld is installed
+      package:
+        name: firewalld
+        state: present
+
+    - name: Start and enable firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Allow SSH through firewall
+      firewalld:
+        service: ssh
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: sshd
+        state: restarted
