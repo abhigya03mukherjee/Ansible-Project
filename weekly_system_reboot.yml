@@ -1,5 +1,5 @@
 ---
-- name: Schedule weekly system reboot
+- name: Schedule weekly system reboot #git url is https://github.com/abhigya03mukherjee/Ansible-Project
   hosts: all
   become: yes
   tasks:
@@ -11,3 +11,4 @@
         weekday: "0"  # Sunday
         job: "/sbin/shutdown -r now"
         user: root
+
